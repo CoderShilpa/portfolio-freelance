@@ -33,19 +33,19 @@ app.post('/send-email', (req, res) => {
     }
 
     // Nodemailer Transporter Setup
-   const transporter = nodemailer.createTransport({
-    // Ab hum 'service: gmail' ki jagah explicit host aur port use karenge
+  // --- Nodemailer Transporter Setup (Final TLS Configuration) ---
+const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465, // Secure SSL port
-    secure: true, // true for 465, false for other ports
+    port: 587, // Standard TLS port
+    secure: false, // Use TLS (true for 465, false for 587)
+    requireTLS: true, // Enforce TLS protocol
     auth: {
         user: process.env.EMAIL_USER, 
         pass: process.env.EMAIL_PASS  
     }
-    // Aap optional 'timeout' bhi add kar sakte hain, although this is usually not the fix:
-    // timeout: 10000 // 10 seconds timeout
 });
 
+// ... rest of the app.post('/send-email', ...) function remains the same
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: 'upadhyayshilpa57@gmail.com', // Your target email address
@@ -83,3 +83,4 @@ app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 
 });
+
