@@ -1,54 +1,39 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path'); // Added for robust path handling
-require('dotenv').config(); 
+const path = require('path');
+const sgMail = require('@sendgrid/mail'); // <-- Naya package import
+require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000; 
+const port = process.env.PORT || 5000;
 
-// --- Middleware ---
-// Using '*' allows all origins, which is standard for a full-stack portfolio deployed together.
+// --- SendGrid Setup (Initialization) ---
+// API key ko yahan initialize karein
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+// --- Middleware and Static Files ---
 app.use(cors()); 
 app.use(bodyParser.json()); 
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// Serve static files (CSS, JS, images, etc.) from the root directory
 app.use(express.static(path.join(__dirname))); 
 
-// --- 1. Homepage Route (CRITICAL FOR DEPLOYMENT) ---
-// This ensures that when a user hits your main URL (e.g., shilpa.render.com),
-// the server explicitly sends index.html.
+// --- 1. Homepage Route ---
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- 2. Email Submission Route ---
-app.post('/send-email', (req, res) => {
+// --- 2. Email Submission Route (HTTP API FIX) ---
+app.post('/send-email', async (req, res) => { // <-- Function MUST be async now
     const { name, email, message } = req.body;
 
     if (!name || !email || !message) {
         return res.status(400).json({ success: false, message: 'Missing required fields.' });
     }
 
-    // Nodemailer Transporter Setup
-  // --- Nodemailer Transporter Setup (Final TLS Configuration) ---
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587, // Standard TLS port
-    secure: false, // Use TLS (true for 465, false for 587)
-    requireTLS: true, // Enforce TLS protocol
-    auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS  
-    }
-});
-
-// ... rest of the app.post('/send-email', ...) function remains the same
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: 'upadhyayshilpa57@gmail.com', // Your target email address
+    const msg = {
+        to: 'upadhyayshilpa57@gmail.com', // Recipient
+        from: 'upadhyayshilpa57@gmail.com', // Must be your verified Sender Email in SendGrid
         subject: `[Portfolio Inquiry] New Project Brief from ${name}`,
         html: `
             <div style="font-family: Arial, sans-serif; border: 1px solid #333; padding: 20px; background-color: #f4f4f4; color: #111;">
@@ -60,27 +45,27 @@ const transporter = nodemailer.createTransport({
                 <hr style="margin-top: 20px;">
                 <p style="font-size: 0.9em;">(Reply directly to: ${email})</p>
             </div>
-        `
+        `,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Nodemailer Error:", error);
-            // Check for common auth errors (like incorrect App Password)
-            if (error.code === 'EAUTH') {
-                return res.status(500).json({ success: false, message: 'Authentication failed. Please check EMAIL_USER and EMAIL_PASS environment variables.' });
-            }
-            return res.status(500).json({ success: false, message: 'Failed to send message due to a server error.' });
+    try {
+        await sgMail.send(msg); // <-- SendGrid API call (uses HTTP)
+        console.log('Message sent successfully via SendGrid HTTP API');
+        res.status(200).json({ success: true, message: 'Email sent successfully!' });
+    } catch (error) {
+        // SendGrid API error handling
+        console.error("SendGrid API Error:", error.response ? error.response.body : error);
+        
+        // This usually means the API key is wrong or the 'from' email is unverified.
+        if (error.code === 401 || error.code === 403) { 
+            return res.status(500).json({ success: false, message: 'Authentication failed. Please check your SENDGRID_API_KEY.' });
         }
         
-        console.log('Message sent successfully: %s', info.messageId);
-        res.status(200).json({ success: true, message: 'Email sent successfully!' });
-    });
+        return res.status(500).json({ success: false, message: 'Failed to send message due to a server error.' });
+    }
 });
 
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
-
 });
-
