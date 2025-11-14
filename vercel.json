@@ -4,28 +4,24 @@
     {
       "src": "server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "css/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
+    // 1. Static Files: /styles.css aur baaki sabhi files ko seedhe serve karo.
+    // Agar aapki file root mein hai, to yahi tareeka sahi hai.
+    {
+      "src": "/styles.css",
+      "dest": "/styles.css"
+    },
+    // 2. API Route: /send-email request ko server.js par bhejo.
     {
       "src": "/send-email",
       "dest": "server.js"
     },
-    {
-      "src": "/(.*)\\.(css|js|jpg|png|svg)",
-      "dest": "/$1.$2"
-    },
+    // 3. Homepage/Default: Baaki sabhi requests ko index.html par bhejo.
     {
       "src": "/(.*)",
-      "dest": "index.html"
+      "dest": "/index.html"
     }
   ]
 }
