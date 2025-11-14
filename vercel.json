@@ -7,17 +7,17 @@
     }
   ],
   "routes": [
-   
-    {
-      "src": "/styles.css",
-      "dest": "/styles.css"
-    },
  
+    {
+      "src": "/(.*)\\.(css|js|jpg|png|svg|ico)",
+      "dest": "/$1.$2"
+    },
+   
     {
       "src": "/send-email",
       "dest": "server.js"
     },
-   
+  
     {
       "src": "/(.*)",
       "dest": "/index.html"
