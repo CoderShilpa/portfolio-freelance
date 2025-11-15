@@ -7,17 +7,23 @@
     }
   ],
   "routes": [
- 
-    {
-      "src": "/(.*)\\.(css|js|jpg|png|svg|ico)",
-      "dest": "/$1.$2"
-    },
-   
+    
     {
       "src": "/send-email",
-      "dest": "server.js"
+      "dest": "server.js",
+      "methods": ["POST"]
+    },
+
+    {
+      "src": "/(.*)\\.(css|js|jpg|png|svg|ico)",
+      "dest": "/$1.$2" 
     },
   
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+   
     {
       "src": "/(.*)",
       "dest": "/index.html"
